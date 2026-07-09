@@ -1,24 +1,29 @@
 # ANSA API MCP Server
 
-基于 [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) 的 ANSA Python API 智能搜索服务。让 Claude Code 能够直接搜索和理解 ANSA API 文档，辅助用户编写 ANSA 脚本。
+基于 [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) 的 ANSA Python API 智能搜索服务。让 Claude Code / CodeBuddy 能够直接搜索和理解 ANSA API 文档，辅助用户编写 ANSA 脚本。
 
 ## 项目介绍
 
-ANSA 是业界广泛使用的 CAE 前处理软件，其 Python API 包含 **2379 个函数**，分布在 **20 个模块**中。面对如此庞大的 API 体系，开发者往往难以快速找到所需的函数。
+ANSA 是业界广泛使用的 CAE 前处理软件，其 Python API 包含 **4358 个函数**，分布在 **25 个模块**（基于 **ANSA v25.1.4** 的真实接口）中。面对如此庞大的 API 体系，开发者往往难以快速找到所需的函数。
 
-本项目将 ANSA API 文档构建为结构化索引，并通过 MCP 协议暴露给 Claude Code，使 AI 能够：
+本项目将 ANSA API 文档构建为结构化索引，并通过 MCP 协议暴露给客户端，使 AI 能够：
 
 - 理解用户的自然语言意图（中英文均可）
 - 精准定位对应的 ANSA API 函数
 - 返回函数签名、参数说明和代码示例
 
-### 覆盖的模块
+### 覆盖的模块（25 个，v25.1.4）
 
 | 模块 | 说明 |
 |------|------|
+| `ansa` | 顶层命名空间（主要为常量与通用入口） |
 | `ansa.base` | 基础操作（查询、创建、修改、删除实体） |
+| `ansa.base.checks.general` | 通用质量检查 |
+| `ansa.base.checks.geometry` | 几何质量检查 |
+| `ansa.base.checks.mesh` | 网格质量检查 |
+| `ansa.base.checks.penetration` | 穿透检查 |
 | `ansa.mesh` | 网格操作（划分、质量检查、编辑） |
-| `ansa.morph` | 形状变形（映射、变形控制） |
+| `ansa.morph` | 形状变形（映射、变形控制、DFM） |
 | `ansa.connections` | 连接管理（焊点、螺栓等） |
 | `ansa.dm` | 数据管理 |
 | `ansa.calc` | 计算工具 |
@@ -26,7 +31,17 @@ ANSA 是业界广泛使用的 CAE 前处理软件，其 Python API 包含 **2379
 | `ansa.batchmesh` | 批量网格处理 |
 | `ansa.report` | 报告生成 |
 | `ansa.cad` | CAD 导入导出 |
-| 以及 10 个其他模块... | |
+| `ansa.analysis_tools` | 求解器/分析工具（如 RunSolver） |
+| `ansa.constants` | 求解器与常量枚举（如 NASTRAN） |
+| `ansa.sph` | SPH 求解相关 |
+| `ansa.spdrm` / `ansa.spdrm.process` | 流程/任务编排 |
+| `ansa.vr` | 虚拟现实交互 |
+| `ansa.betascript` | Beta 脚本工具 |
+| `ansa.session` | 会话/界面控制 |
+| `ansa.taskmanager` | 任务管理 |
+| `ansa.utils` | 通用工具函数 |
+
+> 注：旧版索引基于 v24.1.1（2379 函数）；本版本已合并 v25.1.4 的真实接口（pydev 自动补全桩 + 旧索引的富文档/AI 关键词）升级而来。
 
 ## 功能特性
 
@@ -49,13 +64,13 @@ ANSA 是业界广泛使用的 CAE 前处理软件，其 Python API 包含 **2379
 内置中英文关键词映射，支持用中文描述需求：
 
 ```
-用户: "删除网格"  →  ansa.mesh.DeleteElements
-用户: "delete mesh" →  ansa.mesh.DeleteElements
+用户: "删除实体"  →  ansa.base.DeleteEntity
+用户: "delete entity" →  ansa.base.DeleteEntity
 ```
 
 ### 智能结果排序
 
-- 关键词命中数越多，排名越靠前
+- 关键词命中数越多，排名越靠前；命中的模块名/函数名有额外加权
 - 返回函数签名、模块、分类、参数列表和代码示例
 - 支持按 `module` 和 `category` 过滤
 
@@ -64,7 +79,7 @@ ANSA 是业界广泛使用的 CAE 前处理软件，其 Python API 包含 **2379
 ### 前置条件
 
 - Python 3.10+
-- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) 已安装
+- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) 或兼容 MCP 的客户端
 
 ### 第一步：安装 MCP Server
 
@@ -102,18 +117,18 @@ Successfully registered ansa-api MCP server in Claude Code!
 Restart Claude Code to start using it.
 ```
 
-### 第三步：重启 Claude Code
+### 第三步：重启客户端
 
 重启后即可使用 `search_ansa_api` 工具搜索 ANSA API。
 
 ## 使用示例
 
-在 Claude Code 中直接用自然语言描述需求，AI 会自动调用搜索工具：
+在客户端直接用自然语言描述需求，AI 会自动调用搜索工具：
 
 ```
 你: 帮我写一个删除所有 shell 单元的脚本
 AI: [调用 search_ansa_api("删除 shell")]
-    → 找到 ansa.mesh.DeleteElements()
+    → 找到 ansa.base.DeleteEntity()
     → 生成完整脚本
 ```
 
@@ -137,16 +152,18 @@ AI: [调用 search_ansa_api("get elements by pid", module="ansa.base")]
 
 ```
 ansa-api-mcp/
-├── tools/
-│   ├── mcp_server.py          # MCP Server (FastMCP) + 三层搜索引擎
-│   ├── parse_html.py          # Sphinx HTML 文档解析器
-│   ├── generate_keywords.py   # AI 关键词生成 (Anthropic SDK)
-│   ├── generate_index.py      # 索引构建流水线
-│   ├── ansa_api_index.json    # 预构建索引 (2379 函数)
-│   └── txt_docs/              # ANSA API 全量 TXT 文档 (26 文件)
-├── tests/                     # 测试套件 (26 个测试)
-├── pyproject.toml             # 包配置
-└── demo/                      # 示例 ANSA 脚本
+├── ansa_tools/
+│   ├── mcp_server.py                # MCP Server (FastMCP) + 三层搜索引擎
+│   ├── parse_html.py                # Sphinx HTML 文档解析器
+│   ├── generate_keywords.py         # AI 关键词生成 (Anthropic SDK)
+│   ├── generate_index.py            # HTML 索引构建流水线
+│   ├── generate_index_from_pydev.py # 基于 pydev 桩离线重建索引 (无需 API Key)
+│   ├── merge_index.py               # 合并旧索引与 pydev 新接口
+│   ├── ansa_api_index.json          # 预构建索引 (4358 函数 / v25.1.4)
+│   └── txt_docs/                    # ANSA API 全量 TXT 文档 (25 个模块文件)
+├── tests/                           # 测试套件
+├── pyproject.toml                   # 包配置
+└── demo/                            # 示例 ANSA 脚本
 ```
 
 ### 索引构建
@@ -160,7 +177,7 @@ ansa-api-mcp/
 
 ### MCP 协议
 
-本项目使用 [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk) 的 FastMCP 框架，通过 stdio 协议与 Claude Code 通信。Claude Code 在需要查询 ANSA API 时自动调用 `search_ansa_api` 工具。
+本项目使用 [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk) 的 FastMCP 框架，通过 stdio 协议与客户端通信。客户端在需要查询 ANSA API 时自动调用 `search_ansa_api` 工具。
 
 ## 高级配置
 
@@ -187,15 +204,29 @@ ansa-api-mcp/
 
 如果需要为不同版本的 ANSA 重新生成索引：
 
+**方式 A：基于 ANSA HTML 文档（需要 Anthropic API Key 用于关键词生成）**
+
 ```bash
-# 需要 Anthropic API Key 用于关键词生成
 export ANTHROPIC_API_KEY="your-key"
-python -m tools.generate_index
+python -m ansa_tools.generate_index
+```
+
+**方式 B：基于 pydev 自动补全桩（离线，无需 API Key / 网络）**
+
+直接从 ANSA 安装目录的 pydev 桩文件重建，适合升级到新版本（如 v25.1.4）：
+
+```bash
+# 1) 用 pydev 桩重建 v25.1.4 接口索引
+python -m ansa_tools.generate_index_from_pydev \
+    "D:/Programs/BETA_CAE_Systems/ansa_v25.1.4/docs/extending/python_api/html/_downloads/autocomplete/py_dev/pydev_ansa/ansa"
+
+# 2) 合并旧索引（保留富文档与 AI 关键词）与 pydev 新增接口，并回填关键词
+python -m ansa_tools.merge_index
 ```
 
 ## 故障排查
 
-### MCP 服务器在 Claude Code 中不可见
+### MCP 服务器在客户端中不可见
 
 1. 确认配置写入了正确的文件：`~/.claude.json`（不是 `~/.claude/settings.json`）
 2. 确认配置格式包含必要字段：
@@ -212,7 +243,7 @@ python -m tools.generate_index
    }
    ```
 3. 运行 `claude mcp list` 查看已注册的 MCP 服务器
-4. 重启 Claude Code
+4. 重启客户端
 
 ### pip install 报错 "Cannot find command 'git'"
 

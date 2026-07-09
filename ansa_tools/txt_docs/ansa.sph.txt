@@ -1,0 +1,678 @@
+# Module: ansa.sph
+
+Body
+ansa.sph.Body() -> None
+The ansa.sph.Body is a class that is inherided from the KINETICS body. Therefore, this class supports all the kinetics properties but enhanced with some additional properties related to the SphSolver.
+Example:
+import ansa
+
+idck = ansa.constants.NASTRAN
+
+ent = ansa.base.GetEntity(idck, "SPH_SOLVER", 1)
+
+solver = ansa.sph.Solver(ent)
+
+body1 = solver.get_body("Body1")
+
+if not body1.is_ground():
+    body1["Adhesion"] = 0.25
+    body1["Viscosity"] = 0.40
+
+
+solver.simulate()
+
+Body.activate
+ansa.sph.Body.activate(state: bool = True) -> None
+activates/deactivates the ansa.sph.Body
+- state (bool, optional): if 'True' activates the body else deactivate the body from the Solver. Returns -------
+Returns: None
+
+Body.is_ground
+ansa.sph.Body.is_ground() -> bool
+Returns 'True' if the ansa.sph.Body is the ground body.
+Returns: bool Examples --------
+Example:
+import ansa
+
+idck = ansa.constants.NASTRAN
+
+ent = ansa.base.GetEntity(idck, "SPH_SOLVER", 1)
+
+solver = ansa.sph.Solver(ent)
+
+for body in solver.bodies():
+    if body.is_ground():
+        print("This body is the ground :", body.kin_body()._name)
+
+Body.kin_body
+ansa.sph.Body.kin_body() -> base.Entity
+Returns the KINETICS entity of the ansa.sph.Body
+Returns: base.Entity Examples --------
+Example:
+import ansa
+
+idck = ansa.constants.NASTRAN
+
+ent = ansa.base.GetEntity(idck, "SPH_SOLVER", 1)
+
+solver = ansa.sph.Solver(ent)
+
+print(solver.get_body(1).kin_body()._name)
+
+Body.save_properties
+ansa.sph.Body.save_properties() -> None
+Force to save the properties of the ansa.sph.Body.
+Returns: None Examples --------
+Example:
+import ansa
+
+idck = ansa.constants.NASTRAN
+
+ent = ansa.base.GetEntity(idck, "SPH_SOLVER", 1)
+
+solver = ansa.sph.Solver(ent)
+
+body.get_body("Ground")
+body["Adhesion"] = 0.25  # The value is not arise in gui yet.
+body.save_properties()  # force the save the value
+
+Body.update
+ansa.sph.Body.update(props: dict) -> None
+updates ansa.sph.Body properties
+- props (dict): Dictionary with the properties to be updated. Returns -------
+Returns: None Raises ------ TypeError If one of the keys in the 'props' is not an sph.Body property or the value of the property is invalid. ValueError If the key in 'props' have a different type than str. Examples --------
+Example:
+import ansa
+
+idck = ansa.constants.NASTRAN
+
+ent = ansa.base.GetEntity(idck, "SPH_SOLVER", 1)
+
+solver = ansa.sph.Solver(ent)
+
+
+solver.get_body("Ground").update({"Viscosity": 0.1, "Adhesion": 0.25})
+
+ExportForcesForStructuralAnalysis
+ansa.sph.ExportForcesForStructuralAnalysis(deck: int, model: base.Entity, bodies: list[base.Entity], forces: list[ansa.sph.Sensor]) -> list[base.Entity]
+Exports the forces from sph to ansa entities, so they can be easily used to Structural Analysis. Currently, only NASTRAN deck is supported.
+- deck (int): The deck constant.
+- model (base.Entity): Model where the entities will be created.
+- bodies (list[base.Entity]): List of the A_RIGBODY or ansa.sph.Body entities that will be used on the Structural Analysis.
+- forces (list[ansa.sph.Sensor]): List of the ansa.sph.Sensor objects. The ansa.sph.Sensor should be type of  "Pressure Force on Nodes". Returns -------
+Returns: list[base.Entity] list of the created TLOAD entities. Raises ------ NotImplementedError If the 'deck' is not the NASTRAN deck. RuntimeError If the entities cannot be copies to the model. Examples --------
+Example:
+import ansa
+
+idck = ansa.constants.NASTRAN
+
+ent = ansa.base.GetEntity(idck, "SPH_SOLVER", 1)
+
+solver = ansa.sph.Solver(ent)
+
+
+ground = solver.get_body("Ground")
+body1 = solver.get_body(1)
+body2 = solver.get_body(2)
+
+sensors = ansa.sph.SensorResults(ansa.base.GetEntity(idck, "SPH_SENSOR_RESULTS", 1))
+
+force_sensors = sensors.collect("Pressure Force on Nodes")
+
+model = ansa.base.CreateNewAnsaModel()
+ansa.base.SetEntityCardValues(idck, model, {"Name": "Export Forces"})
+tloads = ansa.sph.ExportForcesForStructuralAnalysis(
+    idck, model, [ground, body1, body2], force_sensors
+)
+
+Info
+ansa.sph.Info()
+Special object that returns information about the simulation process. Generally, the ansa.sph.Info is returned from ansa.sph.Solver.simulate()
+Example:
+import ansa
+
+idck = ansa.constants.NASTRAN
+
+ent = ansa.base.GetEntity(idck, "SPH_SOLVER", 1)
+
+solver = ansa.sph.Solver(ent)
+
+info = solver.simulate()
+
+print(info)
+
+Renderer
+ansa.sph.Renderer()
+The class supports the rendering of the SPH results producing photorealistic images.
+Example:
+import ansa
+
+idck = ansa.constants.NASTRAN
+
+ent = ansa.base.GetEntity(idck, "SPH_SOLVER", 1)
+
+solver = ansa.sph.Solver(ent)
+
+solver.renderer().set_export_path("./")
+solver.renderer().frame(10)
+
+Renderer.frame
+ansa.sph.Renderer.frame(framelist: [int, list[int]]) -> None
+exports photorealistic images of the SPH states. The images are written in *.png format.
+- framelist ([int,list[int]]): The framelist is either the index of the state or a list with the desired states to be exported. Returns -------
+Returns: None Raises ------
+
+Renderer.set_export_path
+ansa.sph.Renderer.set_export_path(path: str) -> None
+Sets the path (folder) of the exported images.
+- path (str): Returns -------
+Returns: None
+
+Renderer.set_image_dimensions
+ansa.sph.Renderer.set_image_dimensions(dimensions: tuple) -> None
+Sets the image dimensions in pixels. By Default the dimensions are (1920,1080)
+- dimensions (tuple): This is a tuple of size 2 that represents the size of the image. Returns -------
+Returns: None
+
+Sensor
+ansa.sph.Sensor()
+this class is used to add the SphSolver to export data from the solver after the simulation.
+Example:
+import ansa
+
+idck = ansa.constants.NASTRAN
+
+ent = ansa.base.GetEntity(idck, "SPH_SENSOR_RESULTS", 1)
+
+sensors = ansa.SensorResults(ent)
+
+sensor = sensors.collect("Point Force")[0]
+
+time = sensor.timestamps()
+value = sensor.data()
+num = len(sensor)
+
+for i in range(num):
+    print(time[i], "  ", value[i])
+
+Sensor.data
+ansa.sph.Sensor.data(smooth: bool = False, smooth_options: dict = {}) -> [list[float], list[list]]
+Returns the sensor data. If the sensor is scalar then a list with float values will be returned else a list contained 3 lists of floats will be returned.
+- smooth (bool, optional): If 'True' the data are smoothed out.
+- smooth_options (dict, optional): Dictionary with instructions about the smoothing. Currently, the only supported keyword is "width". Returns -------
+Returns: [list[float], list[list]] Raises ------ ValueError If the 'width' is not type 'float' Examples --------
+Example:
+import ansa
+
+idck = ansa.constants.NASTRAN
+
+ent = ansa.base.GetEntity(idck, "SPH_SENSOR_RESULTS", 1)
+
+sensors = ansa.SensorResults(ent)
+
+psensor = sensor.collect("Point Force")
+sensor = psensor[0]
+
+force = psensor.data()
+force_sm = psensor.data(smooth=True, smooth_options={"width": 0.5})
+
+for i in range(len(force)):
+    fi = force[i]
+    fsmi = force_sm[i]
+
+    print(fsmi - fi)
+
+Sensor.id
+ansa.sph.Sensor.id() -> int
+Returns the sensor id.
+Returns: int
+
+Sensor.is_scalar
+ansa.sph.Sensor.is_scalar() -> bool
+Returns 'True' if the sensor has scalar value.
+Returns: bool
+
+Sensor.is_vector
+ansa.sph.Sensor.is_vector() -> bool
+Returns 'True' if data of the Sensor is in vector form.
+Returns: bool
+
+Sensor.name
+ansa.sph.Sensor.name() -> str
+Gets the name of the of the sensor.
+Returns: str Examples --------
+Example:
+import ansa
+
+idck = ansa.constants.NASTRAN
+
+ent = ansa.base.GetEntity(idck, "SPH_SENSOR_RESULTS", 1)
+
+sensors = ansa.SensorResults(ent)
+
+for sensor in sensors:
+    print(sensor)
+
+Sensor.position
+ansa.sph.Sensor.position() -> tuple
+Returns a tuple with the position of the Sensor in 3D space.
+Returns: tuple
+
+Sensor.rename
+ansa.sph.Sensor.rename() -> str
+Rename the Sensor
+Returns: str
+
+Sensor.timestamps
+ansa.sph.Sensor.timestamps() -> list[float]
+Returns a list containing the timestamps of the stored results.
+Returns: list[float]
+
+Sensor.type
+ansa.sph.Sensor.type() -> str
+Returns the type of the Sensor
+Returns: str
+
+Sensor.units
+ansa.sph.Sensor.units() -> str
+Returns the unit of the Sensor
+Returns: str
+
+SensorResults
+ansa.sph.SensorResults()
+SensorResults is a container that stores the sensors of the simulation.
+
+SensorResults.collect
+ansa.sph.SensorResults.collect(type: str) -> list[ansa.sph.Sensor]
+Returns a list of sensors of specific types.
+- type (str): The type of the ansa.sph.Sensor Returns -------
+Returns: list[ansa.sph.Sensor] Returns a list with all the Sensors of the particular type. Examples --------
+Example:
+import ansa
+
+idck = ansa.constants.NASTRAN
+
+ent = ansa.base.GetEntity(idck, "SPH_SENSOR_RESULTS", 1)
+
+sensors = ansa.SensorResults(ent)
+psensors = sensors.collect("Point Force")
+
+for psensor in psensors:
+    print(psensor)
+
+SensorResults.is_locked
+ansa.sph.SensorResults.is_locked() -> bool
+Returns 'True' is the SensorResults entity is locked.
+Returns: bool
+
+SensorResults.set_lock
+ansa.sph.SensorResults.set_lock(state: bool) -> None
+Sets the locking state of the SensorResults.
+- state (bool): if 'True' the SensorResults will be locked. Returns -------
+Returns: None
+
+SensorResults.set_name
+ansa.sph.SensorResults.set_name(state: bool) -> None
+Set a name to the SensorResults
+- state (bool): if 'True' the SensorResults will be locked. Returns -------
+Returns: None
+
+SensorResults.types
+ansa.sph.SensorResults.types() -> list[str]
+Returns the contained types in the SensorResults.
+Returns: list[str]
+
+Solver
+ansa.sph.Solver(sphsolver: base.Entity) -> None
+The ansa.sph.Solver holds all the functionality of the SphSolver. Visually, it corresponds to "Fluid Simulation" button in the SPH Ribbon. As argument it gets an Ansa Entity of type "SPH_SOLVER".
+Example:
+import ansa
+
+idck = ansa.constants.NASTRAN
+
+# Create an ansa.base.Entity of type "SPH_SOLVER"
+ent = ansa.base.CreateEntity(idck, "SPH_SOLVER", {"Name": "demo"})
+
+# create an ansa.sph.Solver instance
+solver = ansa.sph.Solver(ent)
+
+# print the properties of the solver
+print(solver)
+
+Solver.add_source
+ansa.sph.Solver.add_source(Source: ansa.sph.Source) -> None
+adds a source in the SphSolver.
+- Source (ansa.sph.Source): Returns -------
+Returns: None Raises ------ TypeError if the 'source' is not an ansa.sph.Source instance. Examples --------
+Example:
+import ansa
+
+idck = ansa.constants.NASTRAN
+
+ent = ansa.base.GetEntity(idck, "SPH_SOLVER", 1)
+solver = ansa.sph.Solver(ent)
+
+source_set = ansa.base.GetEntity(idck, "SET", 1)
+
+source = ansa.sph.Source(source_set)
+solver.add_source(source)
+
+Solver.bodies
+ansa.sph.Solver.bodies() -> list
+Returns a list of the ansa.sph.Bodies.
+Returns: list list of ansa.sph.Bodies Examples --------
+Example:
+import ansa
+
+idck = ansa.constants.NASTRAN
+
+ent = ansa.base.GetEntity(idck, "SPH_SOLVER", 1)
+
+solver = ansa.sph.Solver(ent)
+
+for body in solver.bodies():
+    print(body)
+
+Solver.check
+ansa.sph.Solver.check() -> None
+checks if all the properties are well defined.
+Returns: None Raises ------ TypeError If at least one property has wrong type or is outside the bounds. Examples --------
+Example:
+import ansa
+
+idck = ansa.constants.NASTRAN
+
+ent = ansa.base.GetEntity(idck, "SPH_SOLVER", 1)
+
+solver = ansa.sph.Solver(ent)
+
+try:
+    solver.check()
+except:
+    print("Some values are not well defined")
+
+Solver.copy_to
+ansa.sph.Solver.copy_to(targer: ansa.sph.Solver) -> None
+It copies the properties of an SPH_SOLVER entities to a different one.
+- targer (ansa.sph.Solver): Returns -------
+Returns: None Raises ------ TypeError Raises if the 'target' is not an ansa.sphSolver instance. Examples --------
+Example:
+import ansa
+
+idck = ansa.constants.NASTRAN
+
+ent0 = ansa.base.GetEntity(idck, "SPH_SOLVER", 1)
+ent1 = ansa.base.CreateEntity(idck, "SPH_SOLVER", {"Name": "new"})
+
+solver0 = ansa.sph.Solver(ent0)
+solver1 = ansa.sph.Solver(ent1)
+
+solver0.copy_to(solver1)
+
+solver1["Simulation.Particle.Radius"] = 2.5
+
+print(solver0)
+print(solver1)
+
+Solver.del_source
+ansa.sph.Solver.del_source(index: int = 0) -> None
+deletes a source from the the SphSolver.
+- index (int, optional): The index is based on the submission order while negative values delete from the end of the source list. Returns -------
+Returns: None Raises ------ IndexError The 'index' is out of range. Examples --------
+Example:
+import ansa
+
+idck = ansa.constants.NASTRAN
+
+ent = ansa.base.GetEntity(idck, "SPH_SOLVER", 1)
+
+solver = ansa.sph.Solver(ent)
+
+solver.del_source()  # deletes the first source
+source.del_source(-1)  # deletes the last source
+
+Solver.get_body
+ansa.sph.Solver.get_body(identifier: [int, str]) -> ansa.sph.Body
+Returns an ansa.sph.Body based on id or name identifier.
+- identifier ([int,str]): The identifier should be either a positive integer or the name of the requested body. Returns -------
+Returns: ansa.sph.Body Raises ------ TypeError The 'identifier' should be either an 'str' or 'int' Examples --------
+Example:
+import ansa
+
+idck = ansa.constants.NASTRAN
+
+ent = ansa.base.GetEntity(idck, "SPH_SOLVER", 1)
+
+solver = ansa.sph.Solver(ent)
+
+ground = solver.get_body("ground")
+
+Solver.properties
+ansa.sph.Solver.properties(sphsolver: base.Entity) -> list
+Returns a list with all the properties name.
+- sphsolver (base.Entity): should be an ansa.base.Entity from the database of type "SPH_SOLVER" Returns -------
+Returns: list Is a list of str that corresponds to the property names. Raises ------ TypeError Raises if the "sphsolver" is not an ansa.base.Entity or the type of ansa.base.Enity is not "SPH_SOLVER". Examples --------
+Example:
+import ansa
+
+idck = ansa.constants.NASTRAN
+
+ent = ansa.base.GetEntity(idck, "SPH_SOLVER", 1)
+
+solver = ansa.sph.Solver(ent)
+
+for prop in solver.properties():
+    if prop.startswith("Simulation"):
+        print(prop)
+
+Solver.read
+ansa.sph.Solver.read(filename: str) -> None
+reads the SphSolver properties from a file.
+- filename (str): Returns -------
+Returns: None Examples --------
+Example:
+import ansa
+
+idck = ansa.constants.NASTRAN
+
+ent = ansa.base.GetEntity(idck, "SPH_SOLVER", 1)
+
+solver = ansa.sph.Solver(ent)
+
+solver.read("./old_properties.json")
+
+Solver.renderer
+ansa.sph.Solver.renderer() -> ansa.sph.Renderer
+returns the renderer of the SphSolver.
+Returns: ansa.sph.Renderer Examples --------
+Example:
+import ansa
+
+idck = ansa.constants.NASTRAN
+
+ent = ansa.base.GetEntity(idck, "SPH_SOLVER", 1)
+solver = ansa.sph.Solver(ent)
+
+solver.renderer.frame(0)
+
+Solver.save
+ansa.sph.Solver.save() -> None
+Saves all the properties in the ansa db.
+Returns: None Examples --------
+Example:
+import ansa
+
+idck = ansa.constants.NASTRAN
+
+# Creates an ansa.base.Entity
+ent = ansa.base.CreateEntity(idck, "SPH_SOLVER", {"Name": "demo"})
+
+# Create ansa.sph.Solver object
+solver = ansa.sph.Solver(ent)
+
+# Change some properties of the solver
+solver["Simulation.Time"] = 2.0
+solver["Simulation.Particle.Radius"] = 0.001
+
+# Save solver properties
+solver.save()
+
+Solver.simulate
+ansa.sph.Solver.simulate(initial_state: int = 0) -> ansa.sph.Info
+Calls the SphSolver.
+- initial_state (int, optional): Sets the initial state to start the simulation. Please see the method sph.Solver.states() and the class ansa.sph.States. Returns -------
+Returns: ansa.sph.Info Returns object that has corresponding info about the Solver progress. Raises ------ TypeError Raises when at least one of the Solver properties has a different type than the nominal type. ValueError Raises when the user requests an initial_state but no states are loeaded. Also, the exception raises if the requested "inital_state" is out-of-bounds. RuntimeError Raises in cases where the license cannot be checked out. Examples --------
+Example:
+import ansa
+
+dck = ansa.constants.NASTRAN
+
+# Create Ansa Entity of type "SPH_SOLVER"
+ent = ansa.base.CreateEntity(dck, "SPH_SOLVER", {"Name": "SphSolver_demo"})
+
+# Create an instance of sph.Solver
+solver = ansa.sph.Solver(ent)
+
+# Set simulation time to 2 sec
+solver["Simulation.Time"] = 2.0
+
+# simulate the model starting from t = 0
+solver.simulate()
+
+Solver.sources
+ansa.sph.Solver.sources() -> list[sph.Source]
+returns a lists of the current sources.
+Returns: list[sph.Source]
+
+Solver.states
+ansa.sph.Solver.states() -> ansa.sph.States
+Using this function, the user has access in the states of the instance. The container of the states has type ansa.sph.States.
+Returns: ansa.sph.States Examples --------
+Example:
+import ansa
+
+idck = ansa.constants.NASTRAN
+
+ent = ansa.base.GetEntity(idck, "SPH_SOLVER", 1)
+solver = ansa.sph.Solver(ent)
+
+if not solver.states().are_loaded():
+    solver.states().load()
+
+print(solver.states().num())
+
+Solver.update
+ansa.sph.Solver.update(props: dict) -> None
+updates the properties of the ansa.sph.Solver object.
+- props (dict): Dictionary with the new values of the properties. Returns -------
+Returns: None Raises ------ TypeError if the property does not exist in ansa.sph.Solver. ValueError if the key of the dictionary has a different type than 'str'. Examples --------
+Example:
+import ansa
+
+idck = ansa.constants.NASTRAN
+
+ent = ansa.base.GetEntity(idck, "SPH_SOLVER", 1)
+
+solver = ansa.sph.Solver(ent)
+
+solver.update({"Simulation.Time": 0.5, "Simulation.Particle.Radius": 0.001})
+
+print(solver)
+
+Solver.write
+ansa.sph.Solver.write(filename: str) -> None
+writes the instance into a file.
+- filename (str): Returns -------
+Returns: None Raises ------ TypeError If the file does not have a the extension ".json" Examples --------
+Example:
+import ansa
+
+idck = ansa.constants.NASTRAN
+
+ent = ansa.base.GetEntity(idck, "SPH_SOLVER", 1)
+
+solver = ansa.sph.Solver(ent)
+
+solver.write("./saved_properties.json")
+solver.read("./saved_properties.json")
+
+Source
+ansa.sph.Source(set: base.Entity, emit_type: str = 'Continuous', value: [float, str] = 0.001) -> None
+Using this class the user can modify the properties of the SPH Sources.
+
+Source.is_continuous
+ansa.sph.Source.is_continuous() -> bool
+returns 'True' if the source is continuous
+Returns: bool
+
+Source.is_inverted
+ansa.sph.Source.is_inverted() -> bool
+returns 'True' if the direction of the flow is in the opposite direction of the normal of the surface.
+Returns: bool
+
+Source.is_rain
+ansa.sph.Source.is_rain() -> bool
+Returns 'True' if the Source is a rain source.
+Returns: bool
+
+Source.units
+ansa.sph.Source.units() -> str
+returns the units of the source.
+Returns: str
+
+Source.update
+ansa.sph.Source.update(props: dict) -> None
+updates the properties of the source.
+- props (dict): Returns -------
+Returns: None Raises ------
+
+States
+ansa.sph.States()
+This class acts as a container storing the produced states of the simulation
+Example:
+import ansa
+
+idck = ansa.constants.NASTRAN
+
+ent = ansa.base.GetEntity(idck, "SPH_SOLVER", 1)
+
+solver = ansa.sph.Solver(ent)
+
+solver["Simulation.Time"] = 1.0
+solve.simulate()  # start from the begginng
+
+if not solver.states().are_loaded():
+    solver.states().load()
+
+
+solver["Simulation.Time"] = 2.0
+# continue simulation
+# start from the last saved state
+solver.simulate(initial_state=-1)
+
+States.are_loaded
+ansa.sph.States.are_loaded() -> bool
+checks if the current instance has loaded state. Returns 'True' if the states are loaded.
+Returns: bool
+
+States.load
+ansa.sph.States.load(file: str) -> None
+Loads the states results
+- file (str, optional): Path to *.xmf file. The default value is the one stored in the property "Results.File" Returns -------
+Returns: None Raises ------
+
+States.num
+ansa.sph.States.num() -> int
+Returns the number of the loaded states.
+Returns: int
+
+States.show
+ansa.sph.States.show(state: int) -> None
+Shows the results in the GLarea of ansa.
+- state (int): the number of state to show in the GLarea. Returns -------
+Returns: None Raises ------
+
+States.unload
+ansa.sph.States.unload() -> None
+unload the number of states
+Returns: None

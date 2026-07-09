@@ -68,17 +68,36 @@ class AnsaApiSearcher:
         if category:
             candidates = [f for f in candidates if f.get("category") == category]
 
-        # Layer 1: keyword match — check if keywords appear as substrings of the query
+        # Layer 1: keyword match with module / name relevance boost
         query_lower = query.lower()
         scored: list[tuple[int, dict]] = []
         for func in candidates:
             kw_lower = func["_keywords_lower"]
-            match_count = sum(1 for kw in kw_lower if kw in query_lower)
-            if match_count == 0:
-                # Also check if query tokens appear as keywords
-                match_count = sum(1 for tok in query_tokens if tok in kw_lower)
-            if match_count > 0:
-                scored.append((match_count, func))
+            score = 0
+            mod_last = func["module"].split(".")[-1]
+            name_lower = func["name"].lower()
+            # Boost when the query names the module or the function itself — these
+            # are the strongest relevance signals and stop loosely-tagged constants
+            # (which carry broad keywords like "mesh"/"solver") from outranking the
+            # functions users actually mean.
+            for tok in query_tokens:
+                if not tok:
+                    continue
+                if mod_last == tok or tok in mod_last or mod_last in tok:
+                    score += 6
+                if tok in name_lower or name_lower in tok:
+                    score += 8
+            # Keyword matches: an exact query token weighs more than a substring hit.
+            for kw in kw_lower:
+                if kw in query_lower:
+                    score += 2 if kw in query_tokens else 1
+            if score == 0:
+                # Fallback: a query token appears inside a keyword.
+                for tok in query_tokens:
+                    if tok and tok in kw_lower:
+                        score += 1
+            if score > 0:
+                scored.append((score, func))
         scored.sort(key=lambda x: -x[0])
         results = [func for _, func in scored]
 
