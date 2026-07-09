@@ -4,7 +4,7 @@
 
 ## 项目介绍
 
-ANSA 是业界广泛使用的 CAE 前处理软件，其 Python API 包含 **4358 个函数**，分布在 **25 个模块**（基于 **ANSA v25.1.4** 的真实接口）中。面对如此庞大的 API 体系，开发者往往难以快速找到所需的函数。
+ANSA 是业界广泛使用的 CAE 前处理软件，其 Python API 包含 **5892 个函数**，分布在 **26 个模块**（基于 **ANSA v25.1.4** 的真实接口）中。面对如此庞大的 API 体系，开发者往往难以快速找到所需的函数。
 
 本项目将 ANSA API 文档构建为结构化索引，并通过 MCP 协议暴露给客户端，使 AI 能够：
 
@@ -12,7 +12,7 @@ ANSA 是业界广泛使用的 CAE 前处理软件，其 Python API 包含 **4358
 - 精准定位对应的 ANSA API 函数
 - 返回函数签名、参数说明和代码示例
 
-### 覆盖的模块（25 个，v25.1.4）
+### 覆盖的模块（26 个，v25.1.4）
 
 | 模块 | 说明 |
 |------|------|
@@ -40,8 +40,9 @@ ANSA 是业界广泛使用的 CAE 前处理软件，其 Python API 包含 **4358
 | `ansa.session` | 会话/界面控制 |
 | `ansa.taskmanager` | 任务管理 |
 | `ansa.utils` | 通用工具函数 |
+| `ansa.guitk` | GUI 工具包（自定义窗口/对话框、控件与对齐常量，含 340 个 `constants.*` 枚举） |
 
-> 注：旧版索引基于 v24.1.1（2379 函数）；本版本已合并 v25.1.4 的真实接口（pydev 自动补全桩 + 旧索引的富文档/AI 关键词）升级而来。
+> 注：旧版索引基于 v24.1.1（2379 函数）；本版本已合并 v25.1.4 的真实接口（pydev 自动补全桩 + 旧索引的富文档/AI 关键词）升级而来。`ansa.guitk`（GUI 工具包，1190 个控件函数 + 340 个对齐/样式常量）此前因常量嵌套在 `class constants:` 内被解析器漏抓，现已修复并纳入。
 
 ## 功能特性
 
@@ -159,8 +160,8 @@ ansa-api-mcp/
 │   ├── generate_index.py            # HTML 索引构建流水线
 │   ├── generate_index_from_pydev.py # 基于 pydev 桩离线重建索引 (无需 API Key)
 │   ├── merge_index.py               # 合并旧索引与 pydev 新接口
-│   ├── ansa_api_index.json          # 预构建索引 (4358 函数 / v25.1.4)
-│   └── txt_docs/                    # ANSA API 全量 TXT 文档 (25 个模块文件)
+│   ├── ansa_api_index.json          # 预构建索引 (5892 函数 / v25.1.4)
+│   └── txt_docs/                    # ANSA API 全量 TXT 文档 (26 个模块文件)
 ├── tests/                           # 测试套件
 ├── pyproject.toml                   # 包配置
 └── demo/                            # 示例 ANSA 脚本

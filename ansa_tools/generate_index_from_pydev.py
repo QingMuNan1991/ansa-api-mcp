@@ -123,8 +123,12 @@ PYDEV = r"D:\Programs\BETA_CAE_Systems\ansa_v25.1.4\docs\extending\python_api\ht
 API_VERSION = "v25.1.4"
 OLD_INDEX = os.path.join(HERE, "ansa_api_index.json")  # the one we are about to replace
 
-# Modules we deliberately exclude (META GUI toolkit / pure re-export shim)
-EXCLUDE_MODULES = {"ansa.guitk", "ansa.script"}
+# Modules we deliberately exclude.
+# - ansa.script is a pure re-export shim (no real API surface of its own).
+# - ansa.guitk IS included: its 1193 widget functions are top-level defs, and its
+#   340 GUI constants live inside `class constants:` (handled by the nested-constant
+#   extraction in parse_module_file), so nothing is silently dropped.
+EXCLUDE_MODULES = {"ansa.script"}
 
 
 # --------------------------------------------------------------------------- #
@@ -311,26 +315,62 @@ def parse_module_file(path: str, module: str) -> list[dict]:
             doc = ast.get_docstring(node) or ""
             init = None
             methods = []
+            class_consts = []  # class-level Assign/AnnAssign (constants)
+            # A "constants container" class (named `constants`, or a class whose
+            # body is ONLY assignments and has no methods) holds API constants
+            # that may be CamelCase (e.g. guitk.constants.BCAlignAuto), so we must
+            # surface every assignment, not just ALL-CAPS ones.
+            is_const_container = (node.name == "constants") or (
+                not any(isinstance(s, ast.FunctionDef) for s in node.body)
+                and all(isinstance(s, (ast.Assign, ast.AnnAssign)) for s in node.body)
+            )
             for sub in node.body:
                 if isinstance(sub, ast.FunctionDef):
                     if sub.name == "__init__":
                         init = sub
                     elif not sub.name.startswith("_"):
                         methods.append(sub)
-            if init is not None:
-                sig = _build_sig(init, module, node.name, self_in_first=True)
-            else:
-                sig = f"{module}.{node.name}()"
-            d = _split_sections(doc)
-            entries.append({
-                "name": node.name,
-                "module": module,
-                "signature": sig,
-                "description": d["desc"],
-                "parameters": d["parameters"],
-                "returns": d["returns"],
-                "examples": d["examples"],
-            })
+                elif isinstance(sub, (ast.Assign, ast.AnnAssign)):
+                    # class-level constant (e.g. guitk.constants.BCAlignAuto).
+                    # pydev nests GUI constants inside `class constants:`; we must
+                    # surface them as their own entries or they get silently dropped.
+                    targets = sub.targets if isinstance(sub, ast.Assign) else [sub.target]
+                    value = sub.value if isinstance(sub, ast.Assign) else sub.value
+                    for t in targets:
+                        if isinstance(t, ast.Name) and (t.id.isupper() or is_const_container):
+                            class_consts.append((t.id, value))
+            # nested class-level constants -> entries "ClassName.CONST"
+            for cname, cval in class_consts:
+                val = _ann(cval) if cval is not None else ""
+                csig = f"{module}.{node.name}.{cname} = {val}" if val else f"{module}.{node.name}.{cname}"
+                entries.append({
+                    "name": f"{node.name}.{cname}",
+                    "module": module,
+                    "signature": csig,
+                    "description": "",
+                    "parameters": [],
+                    "returns": "",
+                    "examples": "",
+                })
+            # Emit the bare class entry only when it is a genuine class
+            # (has methods, a docstring, or is not a pure constants holder).
+            # This avoids a useless `ansa.guitk.constants()` empty entry.
+            is_pure_constants = (not methods) and (not doc.strip()) and bool(class_consts)
+            if not is_pure_constants:
+                if init is not None:
+                    sig = _build_sig(init, module, node.name, self_in_first=True)
+                else:
+                    sig = f"{module}.{node.name}()"
+                d = _split_sections(doc)
+                entries.append({
+                    "name": node.name,
+                    "module": module,
+                    "signature": sig,
+                    "description": d["desc"],
+                    "parameters": d["parameters"],
+                    "returns": d["returns"],
+                    "examples": d["examples"],
+                })
             # also expose the class's public methods as their own searchable entries
             # (e.g. spdrm.process.Run, vr.VR.Create, base.Check.run) — these are the
             # real callable API surface in ANSA.
