@@ -4,6 +4,8 @@
 
 ## 项目介绍
 
+特别说明，本项目思路来自github账号RuFengLai：https://github.com/RufengLai/ansa-api-mcp.git，由本人基于ansa25.1.4的api，通过vibecoding进行了优化。
+
 ANSA 是业界广泛使用的 CAE 前处理软件，其 Python API 包含 **5892 个函数**，分布在 **26 个模块**（基于 **ANSA v25.1.4** 的真实接口）中。面对如此庞大的 API 体系，开发者往往难以快速找到所需的函数。
 
 本项目将 ANSA API 文档构建为结构化索引，并通过 MCP 协议暴露给客户端，使 AI 能够：
