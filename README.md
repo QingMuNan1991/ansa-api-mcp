@@ -1,3 +1,10 @@
+<img width="430" height="430" alt="微信图片_20260912110609_11_156" src="https://github.com/user-attachments/assets/00f18553-dd01-40e8-8e47-cf72ca992269" />
+
+欢迎关注“解忧CAE”公众号，共同交流ANSA/META仿真技巧
+
+
+
+
 # ANSA API MCP Server
 
 基于 [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) 的 ANSA Python API 智能搜索服务。让 Claude Code / CodeBuddy 能够直接搜索和理解 ANSA API 文档，辅助用户编写 ANSA 脚本。
